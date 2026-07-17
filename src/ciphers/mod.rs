@@ -1,0 +1,117 @@
+pub mod aes_common;
+pub mod des_common;
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+mod aes_x86;
+#[cfg(target_arch = "aarch64")]
+mod aes_aarch64;
+mod aes;
+mod sm4;
+mod hash_common;
+mod sm3;
+mod sha256;
+mod sha1;
+mod des;
+mod xor;
+pub use self::aes::aes_attack_first_sbox_bit_with_guess_r;
+pub use self::aes::aes_attack_first_sbox_hw_with_guess_r;
+pub use self::aes::aes_attack_first_sbox_value_with_guess_r;
+pub use self::aes::aes_attack_last_round_xor_bit_with_guess_r;
+pub use self::aes::aes_attack_last_round_xor_hw_with_guess_r;
+pub use self::aes::aes_attack_last_sbox_bit_with_guess_r;
+pub use self::aes::aes_attack_last_sbox_hw_with_guess_r;
+
+pub use self::aes::aes_decrypt_step_fix_key_r;
+pub use self::aes::aes_decrypt_step_r;
+pub use self::aes::aes_encrypt_step_fix_key_r;
+pub use self::aes::aes_encrypt_step_r;
+pub use self::aes::aes_inv_mixcolumns_r;
+pub use self::aes::aes_mixcolumns_r;
+pub use self::aes::aes_sbox_sr_r;
+
+pub use self::sm4::sm4_attack_first_sbox_bit_with_guess_r;
+pub use self::sm4::sm4_attack_first_sbox_hw_with_guess_r;
+pub use self::sm4::sm4_attack_first_sbox_value_with_guess_r;
+
+pub use self::sm4::sm4_attack_sbox_bit_with_guess_r;
+pub use self::sm4::sm4_attack_sbox_hw_with_guess_r;
+pub use self::sm4::sm4_attack_sbox_value_with_guess_r;
+pub use self::sm4::sm4_encrypt_fix_key_step_r;
+pub use self::sm4::sm4_encrypt_step_r;
+pub use self::sm4::sm4_decrypt_fix_key_step_r;
+pub use self::sm4::sm4_decrypt_step_r;
+pub use self::sm4::sm4_opl_r;
+
+pub use self::sm3::sm3_hash_r;
+pub use self::sm3::sm3_hash_batch_r;
+pub use self::sm3::sm3_hmac_r;
+pub use self::sm3::sm3_expand_message_r;
+pub use self::sm3::sm3_compute_hi_ho_r;
+pub use self::sm3::sm3_compute_w_r;
+pub use self::sm3::sm3_compute_w_prime_r;
+pub use self::sm3::sm3_attack_delta1_0_hw_r;
+pub use self::sm3::sm3_attack_delta2_0_hw_r;
+pub use self::sm3::sm3_attack_a0_hw_r;
+pub use self::sm3::sm3_attack_b0_rotl9_hw_r;
+pub use self::sm3::sm3_attack_e0_hw_r;
+pub use self::sm3::sm3_attack_f0_rotl19_hw_r;
+pub use self::sm3::sm3_attack_c0_hw_r;
+pub use self::sm3::sm3_attack_g0_hw_r;
+
+pub use self::sha256::sha256_hash_r;
+pub use self::sha256::sha256_hash_batch_r;
+pub use self::sha256::sha256_expand_message_r;
+pub use self::sha256::sha256_hmac_r;
+pub use self::sha256::sha256_compute_hi_ho_r;
+pub use self::sha256::sha256_compute_w_r;
+pub use self::sha256::sha256_attack_delta0_hw_r;
+pub use self::sha256::sha256_attack_t20_hw_r;
+pub use self::sha256::sha256_attack_a0_or_b0_hw_r;
+pub use self::sha256::sha256_attack_d0_hw_r;
+pub use self::sha256::sha256_attack_e0_hw_r;
+pub use self::sha256::sha256_attack_f0_hw_r;
+pub use self::sha256::sha256_attack_g0_hw_r;
+pub use self::sha256::sha256_attack_c0_hw_r;
+
+pub use self::sha1::sha1_hash_r;
+pub use self::sha1::sha1_hash_batch_r;
+pub use self::sha1::sha1_expand_message_r;
+pub use self::sha1::sha1_hmac_r;
+pub use self::sha1::sha1_compute_hi_ho_r;
+pub use self::sha1::sha1_compute_w_r;
+pub use self::sha1::sha1_attack_delta0_hw_r;
+pub use self::sha1::sha1_attack_r1_hw_r;
+pub use self::sha1::sha1_attack_a0_rot30_hw_r;
+pub use self::sha1::sha1_attack_b0_rot30_hw_r;
+pub use self::sha1::sha1_attack_c0_hw_r;
+
+pub use self::xor::xor_attack_bit_with_guess_r;
+pub use self::xor::xor_attack_hw_with_guess_r;
+pub use self::xor::xor_attack_value_with_guess_r;
+
+pub use self::des::des_attack_first_addRk_hw_with_guess_r;
+pub use self::des::des_attack_first_addRk_value_with_guess_r;
+pub use self::des::des_attack_first_sbox_hw_with_guess_r;
+pub use self::des::des_attack_first_sbox_value_with_guess_r;
+pub use self::des::des_attack_first_round_hw_with_guess_r;
+pub use self::des::des_attack_first_round_value_with_guess_r;
+pub use self::des::des_attack_delta_first_round_hw_with_guess_r;
+pub use self::des::des_attack_delta_first_round_value_with_guess_r;
+pub use self::des::des_attack_last_addRk_hw_with_guess_r;
+pub use self::des::des_attack_last_addRk_value_with_guess_r;
+pub use self::des::des_attack_last_sbox_hw_with_guess_r;
+pub use self::des::des_attack_last_sbox_value_with_guess_r;
+pub use self::des::des_attack_last_round_hw_with_guess_r;
+pub use self::des::des_attack_last_round_value_with_guess_r;
+pub use self::des::des_attack_delta_last_round_hw_with_guess_r;
+pub use self::des::des_attack_delta_last_round_value_with_guess_r;
+pub use self::des::des_encrypt_step_fix_key_r;
+pub use self::des::des_encrypt_step_r;
+pub use self::des::des_decrypt_step_fix_key_r;
+pub use self::des::des_decrypt_step_r;
+pub use self::des::des_initial_permutation_r;
+pub use self::des::des_expansive_permutation_r;
+pub use self::des::des_sboxes_r;
+pub use self::des::des_permutation_p_r;
+pub use self::des::des_inv_permutation_p_r;
+pub use self::des::des_final_permutation_r;
+pub use self::des::des_key_schedule_r;

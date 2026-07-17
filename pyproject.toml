@@ -1,0 +1,45 @@
+[build-system]
+requires = ["maturin>=1.1.0"]
+build-backend = "maturin"
+
+# use cython to build
+#requires = ["setuptools", "wheel", "setuptools-rust", "cython"]
+#build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "nuscar"
+version = "1.5.2"
+requires-python = ">=3.12"
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+]
+dependencies = [
+    "cffi",
+    "jupyterlab",
+    "plotly==5.24.1",
+    "plotly_resampler",
+    "numpy>2.0.0",
+    "scipy",
+    "fastdtw",
+    "scikit-learn",
+    "ipyevents",
+    "makefun",
+    "tqdm",
+    "estraces>=1.10.1",
+    "zarr>=3.0.4",
+    "numba",
+    "gmpy2",
+    "pyarrow"
+]
+
+[tool.maturin]
+features = ["pyo3/extension-module"]
+# using abi3 lets a single wheel support multiple Python versions
+module-name = "nuscar.nuscar_rust"
+
+[build]
+# https://nnethercote.github.io/perf-book/compile-times.html
+rustflags = ["-C", "link-arg=-fuse-ld=lld"]
