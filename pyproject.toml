@@ -9,7 +9,7 @@ build-backend = "maturin"
 
 [project]
 name = "nuscar"
-version = "1.5.2"
+version = "1.5.3"
 requires-python = ">=3.12"
 classifiers = [
     "Programming Language :: Rust",
@@ -32,7 +32,8 @@ dependencies = [
     "zarr>=3.0.4",
     "numba",
     "gmpy2",
-    "pyarrow"
+    "pyarrow",
+    "pytz"
 ]
 
 [tool.maturin]

@@ -4,6 +4,7 @@
 # trademark and any applicable intellectual property.
 
 from tqdm.notebook import tqdm
+import joblib as _joblib
 import numpy as _np
 import pandas as _pd
 from IPython.display import HTML
@@ -23,7 +24,7 @@ class Container():
 
     def __init__(self, frame=None, func_preprocess=None):
         self._func_pre = func_preprocess
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger(__name__.split('.')[0])
         self._check_frame_type(frame)
         self._frame = frame
 
@@ -143,7 +144,7 @@ class Storer:
 
     def __init__(self):
         self._meta = None
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger(__name__.split('.')[0])
 
     def update(self, samples: _np.array, **kwargs):
         if self._meta is None:
@@ -154,11 +155,18 @@ class Storer:
         else:
             pass
 
-    def update_container(self, ctn: Container, metakeep=None):
-        """Update storer from a opened container"""
+    def update_container(self, ctn: Container, metakeep=None, batch_size: int = None):
+        """Update storer from a opened container
+
+        Args:
+            ctn (Container): container of traces.
+            metakeep (list, optional): meta to keep in storer. Defaults to None(keep all).
+            batch_size (int, optional): batch size for processing. Defaults to None(auto).
+        """
         nb_traces = len(ctn)
         nb_samples = len(ctn[0].samples)
-        batch_size = nuscar._find_batch_size(nb_samples)
+        if batch_size is None:
+            batch_size = nuscar._find_batch_size(nb_samples)
         pbar = tqdm(total=nb_traces)
         for i in range(0, nb_traces, batch_size):
             batch = ctn[i:i+batch_size]
@@ -173,13 +181,16 @@ class Storer:
             pbar.update(len(batch))
         pbar.close()
 
-    def update_sync(self, ctn: Container,  sync_func: callable, metakeep: list = None):
+    def update_sync(self, ctn: Container,  sync_func: callable, metakeep: list = None, batch_size: int = None, n_jobs: int = 1):
         """Use a function sync_func to synchronize a traceset.
 
         Args:
             ctn (Container): container of unsynchronized traces.
             sync_func (callable): sync_func(t:ndarray) -> ndarray, where s and return are 1-D ndarray.
             metakeep (list, optional): meta to keep in storer. Defaults to None(keep all).
+            batch_size (int, optional): batch size for processing. Defaults to None(auto).
+            n_jobs (int, optional): number of parallel workers for per-trace sync_func. Defaults to 1(serial).
+                Use -1 to use all available CPU cores. Parallel execution uses joblib's threading backend.
         """
         nb_traces = len(ctn)
         nb_samples = len(ctn[0].samples)
@@ -194,23 +205,36 @@ class Storer:
         if nb_samples_sync == 0:
             raise RuntimeError("sync_func always returns None, cannot perform alignment")
 
-        batch_size = nuscar._find_batch_size(nb_samples)
+        if batch_size is None:
+            batch_size = nuscar._find_batch_size(nb_samples)
         pbar = tqdm(total=nb_traces)
         keep_number = 0
         for i in range(0, nb_traces, batch_size):
             batch = ctn[i:i+batch_size]
+            samples = batch.samples
+            if n_jobs == 1:
+                results = [sync_func(t) for t in samples]
+            else:
+                results = _joblib.Parallel(n_jobs=n_jobs, backend="threading")(
+                    _joblib.delayed(sync_func)(t) for t in samples
+                )
+
             keep_idx = []
             keep_smp = _np.empty(
-                [batch_size, nb_samples_sync], dtype=sync_type)
+                [len(samples), nb_samples_sync], dtype=sync_type)
             idx = 0
-            for j, t in enumerate(batch.samples):
-                s = sync_func(t)
+            for j, s in enumerate(results):
                 if s is not None:
+                    if len(s) != nb_samples_sync:
+                        raise ValueError(
+                            "sync_func returned length %d for trace %d, expected %d"
+                            % (len(s), i+j, nb_samples_sync)
+                        )
                     keep_smp[idx] = s
                     keep_idx.append(j)
                     idx = idx+1
                 else:
-                    self.logger.debug("Discarding trace %d" % (i+j))
+                    self.logger.info("Discarded trace %d" % (i+j))
             if idx > 0:
                 meta = dict()
                 batch_keep = batch[keep_idx]

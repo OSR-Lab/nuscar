@@ -3,13 +3,18 @@
 # Open Security Research, Inc. remains the sole owner of this source code copyrights,
 # trademark and any applicable intellectual property.
 
+from pathlib import Path
+
 import numpy as _np
 from nuscar.traceset import Container
 from nuscar.traceset import Storer
 
 
 class StorerMemory(Storer):
+    """In-memory trace storer for temporary or interactive collections."""
+
     def __init__(self):
+        """Create an empty in-memory storer."""
         super().__init__()
         self._is_first_update = True
         self._mem_meta = dict()
@@ -23,6 +28,12 @@ class StorerMemory(Storer):
         self._is_first_update = False
 
     def update(self, samples: _np.array, **kwargs):
+        """Append samples and metadata arrays to memory.
+
+        Args:
+            samples (ndarray): Trace samples to append.
+            **kwargs: Metadata arrays keyed by metadata name.
+        """
         super().update(samples, **kwargs)
         if self._is_first_update:
             self._init_array(samples, **kwargs)
@@ -33,11 +44,21 @@ class StorerMemory(Storer):
                 self._mem_meta[m] = _np.vstack((self._mem_meta[m], d))
         
     def close(self):
+        """Release resources held by the in-memory storer."""
         pass
 
 
 class ContainerMemory(Container):
+    """Container view over traces collected in a ``StorerMemory`` instance."""
+
     def __init__(self, memstore:StorerMemory, frame=None, func_preprocess=None):
+        """Create a container for in-memory traces.
+
+        Args:
+            memstore (StorerMemory): Source in-memory storer.
+            frame (slice, int, list, ndarray, range, optional): Sample frame to expose.
+            func_preprocess (callable, optional): Preprocessing function applied to samples.
+        """
         super().__init__(frame, func_preprocess)
         self._sub_traceset_indices = None
         self._memstore = memstore
@@ -67,6 +88,11 @@ class ContainerMemory(Container):
         new_container = ContainerMemory(
             self._memstore, self._frame, self._func_pre)
         new_container._sub_traceset_indices = sub_traceset_indices
+        if hasattr(self, 'poi'):
+            # `.poi` (e.g. set by nuscar_pro.traceset.sim helpers) describes sample
+            # positions, not per-trace data, so it is carried over as-is rather
+            # than being indexed like per-trace metadata.
+            new_container.poi = self.poi
         return new_container
 
     def __getattr__(self, name):
@@ -104,3 +130,43 @@ class ContainerMemory(Container):
     @property
     def _nb_traces(self) -> int:
         return self.__len__()
+
+
+class ContainerNPY(ContainerMemory):
+    """Container loaded from .npy files via ``StorerMemory``."""
+
+    @classmethod
+    def from_dir(cls, path, fields=None, mmap_mode=None, frame=None, func_preprocess=None):
+        """Create a memory container from .npy files in a directory."""
+        path = Path(path)
+
+        if fields is None:
+            arrays = {
+                npy_file.stem: _np.load(npy_file, mmap_mode=mmap_mode)
+                for npy_file in sorted(path.glob("*.npy"))
+            }
+        else:
+            arrays = {}
+            for name, filename in fields.items():
+                filename = Path(filename)
+                npy_file = filename if filename.is_absolute() else path / filename
+                arrays[name] = _np.load(npy_file, mmap_mode=mmap_mode)
+
+        if "samples" not in arrays:
+            raise FileNotFoundError("samples.npy is required")
+
+        samples = arrays.pop("samples")
+        # `poi` (sample positions, one value per leak point) describes the
+        # trace layout, not per-trace data; keep it out of the tiled per-trace
+        # metadata path and expose it as a plain `.poi` attribute instead.
+        poi = arrays.pop("poi", None)
+        if "key" in arrays and arrays["key"].ndim == 1:
+            nb_traces = samples.reshape(-1, samples.shape[-1]).shape[0]
+            arrays["key"] = _np.tile(arrays["key"], (nb_traces, 1))
+
+        store = StorerMemory()
+        store.update(samples=samples, **arrays)
+        container = cls(store, frame=frame, func_preprocess=func_preprocess)
+        if poi is not None:
+            container.poi = poi
+        return container

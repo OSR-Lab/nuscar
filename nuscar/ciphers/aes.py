@@ -3,6 +3,10 @@
 # Open Security Research, Inc. remains the sole owner of this source code copyrights,
 # trademark and any applicable intellectual property.
 
+from ._hwcaps import require_aes_support as _require_aes_support
+
+_require_aes_support()
+
 import numpy as _np
 import nuscar.nuscar_rust as _n_rust
 from typing import Callable

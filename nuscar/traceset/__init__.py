@@ -21,5 +21,13 @@ from .zarr import (
 
 from .mem import (
     StorerMemory,
-    ContainerMemory
+    ContainerMemory,
+    ContainerNPY
+)
+
+from .sim import (
+    simulate_traces,
+    simulate_aes_traces,
+    simulate_traces_to_disk,
+    simulate_aes_traces_to_disk
 )

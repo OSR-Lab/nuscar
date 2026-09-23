@@ -66,6 +66,18 @@ Below are the instructions for setting up the development environment. Please fo
   ```bash
   maturin build --release  # generates the whl file in the target/wheels folder
   ```
+
+### AES Hardware Instruction Requirements
+
+The AES implementation in NUSCAR uses hardware acceleration instructions only and provides no software fallback:
+
+- x86/x86_64 CPUs must support AES-NI and SSE2;
+- ARM64/aarch64 CPUs must support the ARM AES instructions, the PMULL Crypto Extension and NEON.
+
+`import nuscar` does not load the AES module, so the other algorithms and features are unaffected by these requirements. CPU capabilities are checked when `nuscar.ciphers.aes` is explicitly imported or accessed; if the requirements are not met, or they cannot be detected reliably, a `RuntimeError` is raised rather than executing unsupported instructions and crashing the process.
+
+`nuscar.nuscar_rust` is the internal native extension. Calling its `aes_*_r` functions directly bypasses the Python-level checks and can still crash the process on a CPU without hardware AES instructions, so it is not a supported public usage.
+
 ## 🎥 Video Tutorials
 
 [NUSCAR Quick Start Part 1: Environment Setup](https://www.bilibili.com/video/BV1hzKVzREq9/?share_source=copy_web&vd_source=f288f8b94276ccdd2d6b1ca1b5f64701)
